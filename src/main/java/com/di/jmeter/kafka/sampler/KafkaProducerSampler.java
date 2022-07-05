@@ -48,12 +48,12 @@ public class KafkaProducerSampler extends KafkaProducerTestElement
 
 		try {
 			Object message = getKafkaMessage();
-			LOGGER.info("KafkaProducerConfig.getValueSerializer(): {}", KafkaProducerConfig.getValueSerializer());
+			// LOGGER.info("KafkaProducerConfig.getValueSerializer(): {}", KafkaProducerConfig.getValueSerializer());
 
 			// hex to byte[]
 			if (KafkaProducerConfig.getValueSerializer().contains("ByteArraySerializer")) {
 				message = hexStr2Bytes(getKafkaMessage());
-				LOGGER.info("convert success, len:{}", ((byte[]) message).length);
+				// LOGGER.info("convert success, len:{}", ((byte[]) message).length);
 			}
 
 			if (Strings.isNullOrEmpty(getPartitionString())) {
@@ -64,7 +64,7 @@ public class KafkaProducerSampler extends KafkaProducerTestElement
 				producerRecord = new ProducerRecord<String, Object>(getKafkaTopic(), partitionNumber, getKafkaMessageKey(), message);
 			}
 
-			LOGGER.info("Additional Headers Size::: " + getMessageHeaders().size());
+			LOGGER.debug("Additional Headers Size::: " + getMessageHeaders().size());
 
 			if (getMessageHeaders().size() >= 1) {
 				StringBuilder headers = new StringBuilder();
@@ -94,20 +94,16 @@ public class KafkaProducerSampler extends KafkaProducerTestElement
 
 	public static byte[] hexStr2Bytes(String src) {
 		src = src.replaceAll(" ", "");
-		System.out.println(src);
 		int m = 0, n = 0;
 		int l = src.length() / 2;
-		System.out.println(l);
 		byte[] ret = new byte[l];
 		for (int i = 0; i < l; i++) {
 			m = i * 2 + 1;
 			n = m + 1;
 			String sss = "0x" + src.substring(i * 2, m) + src.substring(m, n);
-			System.out.println("sss[" + i + "]:" + sss);
 			try {
 				ret[i] = Byte.decode(sss);
 			} catch (Exception e) {
-				// TODO: handle exception
 				int s = Integer.decode(sss);
 				ret[i] = (byte) s;
 			}
