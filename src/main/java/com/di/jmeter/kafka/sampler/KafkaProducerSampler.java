@@ -23,18 +23,18 @@ import com.di.jmeter.kafka.config.KafkaProducerConfig;
 import com.google.common.base.Strings;
 
 public class KafkaProducerSampler extends KafkaProducerTestElement
-		implements Sampler, TestBean, ConfigMergabilityIndicator {
+				implements Sampler, TestBean, ConfigMergabilityIndicator {
 
 	private static Logger LOGGER = LoggerFactory.getLogger(KafkaProducerSampler.class);
 	private static final long serialVersionUID = -1299097780294947281L;
 
 	private static final Set<String> APPLIABLE_CONFIG_CLASSES = new HashSet<>(
-			Arrays.asList("org.apache.jmeter.config.gui.SimpleConfigGui"));
+					Arrays.asList("org.apache.jmeter.config.gui.SimpleConfigGui"));
 
 	private KafkaProducer<String, Object> kafkaProducer;
 	private ProducerRecord<String, Object> producerRecord;
 	private byte[] byteKafkaMessage;
-	
+
 	@Override
 	public SampleResult sample(Entry e) {
 
@@ -47,30 +47,37 @@ public class KafkaProducerSampler extends KafkaProducerTestElement
 		result.setDataEncoding(StandardCharsets.UTF_8.name());
 
 		try {
+			Object message = getKafkaMessage();
+			LOGGER.info("KafkaProducerConfig.getValueSerializer(): {}", KafkaProducerConfig.getValueSerializer());
+
+			// hex to byte[]
+			if (KafkaProducerConfig.getValueSerializer().contains("ByteArraySerializer")) {
+				message = hexStr2Bytes(getKafkaMessage());
+				LOGGER.info("convert success, len:{}", ((byte[]) message).length);
+			}
 
 			if (Strings.isNullOrEmpty(getPartitionString())) {
-				producerRecord = new ProducerRecord<String, Object>(getKafkaTopic(), getKafkaMessageKey().toString(), getKafkaMessage());
-				
+				producerRecord = new ProducerRecord<String, Object>(getKafkaTopic(), getKafkaMessageKey(), message);
+
 			} else {
 				final int partitionNumber = Integer.parseInt(getPartitionString());
-				producerRecord = new ProducerRecord<String, Object>(getKafkaTopic(), partitionNumber, getKafkaMessageKey(), getKafkaMessage());
+				producerRecord = new ProducerRecord<String, Object>(getKafkaTopic(), partitionNumber, getKafkaMessageKey(), message);
 			}
-			
-			LOGGER.debug("Additional Headers Size::: "+ getMessageHeaders().size());
+
+			LOGGER.info("Additional Headers Size::: " + getMessageHeaders().size());
 
 			if (getMessageHeaders().size() >= 1) {
-				StringBuilder headers = new StringBuilder(); 
-				LOGGER.debug("Setting up additional header to message");
+				StringBuilder headers = new StringBuilder();
+				LOGGER.info("Setting up additional header to message");
 				for (int i = 0; i < getMessageHeaders().size(); i++) {
 					producerRecord.headers().add(new RecordHeader(getMessageHeaders().get(i).getHeaderKey(),
-							getMessageHeaders().get(i).getHeaderValue().getBytes()));
-					headers.append(getMessageHeaders().get(i).getHeaderKey() + ": " +getMessageHeaders().get(i).getHeaderValue() + "\n");
-					LOGGER.debug(String.format("Adding Headers : %s", getMessageHeaders().get(i).getConfigKey()));
+									getMessageHeaders().get(i).getHeaderValue().getBytes()));
+					headers.append(getMessageHeaders().get(i).getHeaderKey() + ": " + getMessageHeaders().get(i).getHeaderValue() + "\n");
+					LOGGER.info(String.format("Adding Headers : %s", getMessageHeaders().get(i).getConfigKey()));
 				}
 				result.setRequestHeaders(headers.toString());
 			}
-			
-			byteKafkaMessage = getKafkaMessage().getBytes();
+
 			result.sampleStart();
 
 			produce(byteKafkaMessage, result);
@@ -85,6 +92,28 @@ public class KafkaProducerSampler extends KafkaProducerTestElement
 		return result;
 	}
 
+	public static byte[] hexStr2Bytes(String src) {
+		src = src.replaceAll(" ", "");
+		System.out.println(src);
+		int m = 0, n = 0;
+		int l = src.length() / 2;
+		System.out.println(l);
+		byte[] ret = new byte[l];
+		for (int i = 0; i < l; i++) {
+			m = i * 2 + 1;
+			n = m + 1;
+			String sss = "0x" + src.substring(i * 2, m) + src.substring(m, n);
+			System.out.println("sss[" + i + "]:" + sss);
+			try {
+				ret[i] = Byte.decode(sss);
+			} catch (Exception e) {
+				// TODO: handle exception
+				int s = Integer.decode(sss);
+				ret[i] = (byte) s;
+			}
+		}
+		return ret;
+	}
 
 	@Override
 	public void testStarted() {
@@ -110,7 +139,6 @@ public class KafkaProducerSampler extends KafkaProducerTestElement
 		return APPLIABLE_CONFIG_CLASSES.contains(guiClass);
 	}
 
-	
 
 	private String produce(byte[] byteKafkaMessage, SampleResult result) {
 		String resp = null;

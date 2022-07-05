@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 import com.di.jmeter.kafka.utils.VariableSettings;
 
 public class KafkaProducerConfig extends ConfigTestElement
-		implements ConfigElement, TestBean, TestStateListener, Serializable {
+				implements ConfigElement, TestBean, TestStateListener, Serializable {
 
 	private static Logger LOGGER = LoggerFactory.getLogger(KafkaProducerConfig.class);
 	private static final long serialVersionUID = 3328926106250797599L;
@@ -73,7 +73,7 @@ public class KafkaProducerConfig extends ConfigTestElement
 					LOGGER.debug("Additional Cofig Size::: " + getExtraConfigs().size());
 					if (getExtraConfigs().size() >= 1) {
 						LOGGER.info("Setting up Additional properties");
-						for (int i=0; i<getExtraConfigs().size(); i++) {
+						for (int i = 0; i < getExtraConfigs().size(); i++) {
 							props.put(getExtraConfigs().get(i).getConfigKey(), getExtraConfigs().get(i).getConfigValue());
 							LOGGER.debug(String.format("Adding property : %s", getExtraConfigs().get(i).getConfigKey()));
 						}
@@ -92,6 +92,8 @@ public class KafkaProducerConfig extends ConfigTestElement
 
 					kafkaProducer = new KafkaProducer<String, Object>(props);
 
+					// temp
+					variables.putObject("di-kafkameter" + ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, getSerializerValue());
 					variables.putObject(KAFKA_PRODUCER_CLIENT, kafkaProducer);
 					LOGGER.info("Kafka Producer client successfully Initialized");
 				} catch (Exception e) {
@@ -216,10 +218,13 @@ public class KafkaProducerConfig extends ConfigTestElement
 	public void setSerializerValue(String serializerValue) {
 		this.serializerValue = serializerValue;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static KafkaProducer<String, Object> getKafkaProducerClient() {
 		return (KafkaProducer<String, Object>) JMeterContextService.getContext().getVariables().getObject(KAFKA_PRODUCER_CLIENT);
 	}
 
+	public static String getValueSerializer() {
+		return JMeterContextService.getContext().getVariables().get("di-kafkameter" + ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG);
+	}
 }

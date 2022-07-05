@@ -1,5 +1,13 @@
 # DI-KafkaMeter
 
+## ChangeLog
+
+fork from: [di-kafkameter](https://github.com/rollno748/di-kafkameter)
+
+- 修正生产二进制数据的问题。当设置value.serializer 为 org.apache.kafka.common.serialization.BytesSerializer 时，在Jmeter中粘贴的Message需要为二进制的Hex格式。
+
+refrence: [apache kafka java doc](https://kafka.apache.org/32/javadoc/org/apache/kafka/common/serialization/BytesSerializer.html)
+
 ## Introduction
 
 This plugin is an extended version of Kafkameter with restructured UI and additional features which kafkameter missed
@@ -8,7 +16,6 @@ This plugin is an extended version of Kafkameter with restructured UI and additi
 
 1. DI-Jmeter or Apache Jmeter
 2. Kafka Configs (Broker lists, Topic(s), etc)
-
 
 ## Jar Dependencies Required
 
